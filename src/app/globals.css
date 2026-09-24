@@ -9,7 +9,9 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-caps: var(--font-caps);
+  --font-heading: var(--font-display);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -55,14 +57,25 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* Shadows carry the ink color, not neutral gray — bricknpapers.com's
+   * own --shadow-md/--shadow-frame tint every shadow with plaster-800
+   * (rgba(43,38,32,…)). Indirected through --shadow-*-value so the MODE
+   * blocks below can swap in a plain black tint for dark surfaces,
+   * same pattern as --color-background: var(--background). */
+  --shadow-sm: var(--shadow-sm-value);
+  --shadow-md: var(--shadow-md-value);
+  --shadow-lg: var(--shadow-lg-value);
+  --shadow-xl: var(--shadow-xl-value);
+  --shadow-2xl: var(--shadow-2xl-value);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* ============================================================
  * THEMING — two orthogonal dimensions
  *
  *   1. MODE   (light / dark)  → neutral surfaces. Selected with
- *      `document.documentElement.dataset.mode`. Defaults to dark.
- *   2. ACCENT (violet / …)    → the primary color only. Selected
+ *      `document.documentElement.dataset.mode`. Defaults to light.
+ *   2. ACCENT (gold / …)      → the primary color only. Selected
  *      with `document.documentElement.dataset.theme`.
  *
  * The two compose: any accent works in either mode. Neutral
@@ -72,7 +85,7 @@
  * --sidebar-ring) live in the ACCENT blocks. They set disjoint
  * variables, so cascade order between them doesn't matter.
  *
- * `:root` carries the dark-mode + violet defaults so a visitor
+ * `:root` carries the light-mode + gold defaults so a visitor
  * renders correctly before JS runs; the boot script in
  * layout.tsx replays the saved mode + accent before first paint.
  *
@@ -80,146 +93,124 @@
  * hovered primary buttons and tinted-primary surfaces (sidebar
  * active pill, validation badges).
  *
- * Token shapes come straight from the design handoff at
- * project/Color Themes.html — change one, change the other.
+ * The neutral scale ("plaster") and the gold accent scale are not
+ * invented here — they're lifted verbatim from bricknpapers.com's
+ * shipped production CSS (`--plaster-*` / `--gold-*` custom
+ * properties), the brand's one other digital surface. See
+ * PRODUCT.md → Brand Commitments for the source values. Light mode
+ * uses them directly; dark mode is this system's own re-tinting of
+ * the same family (the site never shipped a dark mode) so switching
+ * modes never breaks brand.
  * ============================================================ */
 
 /* ---- MODE: neutral surfaces ---- */
 
 :root,
-html[data-mode="dark"] {
-  --background: oklch(0.13 0.01 260);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.18 0.01 260);
-  --card-2: oklch(0.205 0.01 260);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.18 0.01 260);
-  --popover-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.22 0.01 260);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.22 0.01 260);
-  --muted-foreground: oklch(0.65 0.01 260);
-  --accent: oklch(0.22 0.01 260);
-  --accent-foreground: oklch(0.985 0 0);
+html[data-mode="light"] {
+  --background: #fbf8f3; /* plaster-50 — site's --bg */
+  --foreground: #1a1612; /* plaster-900 — site's --fg */
+  --card: #ffffff; /* site's --bg-raised */
+  --card-2: #f5efe4; /* plaster-100 */
+  --card-foreground: #1a1612;
+  --popover: #ffffff;
+  --popover-foreground: #1a1612;
+  --secondary: #f5efe4; /* plaster-100 */
+  --secondary-foreground: #2b2620; /* plaster-800 */
+  --muted: #ece3d2; /* plaster-200 */
+  --muted-foreground: #635947; /* plaster-600 — site's --fg-muted */
+  --accent: #ece3d2; /* plaster-200 */
+  --accent-foreground: #2b2620; /* plaster-800 */
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.28 0.01 260);
-  --input: oklch(0.28 0.01 260);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: #ece3d2; /* plaster-200 — site's --border */
+  --input: #d9ccb3; /* plaster-300 — site's --border-strong */
+  --chart-2: #7a8b6f; /* sage */
+  --chart-3: #5c6e85; /* slate blue */
+  --chart-4: #a8564a; /* terracotta */
+  --chart-5: #6b511f; /* gold-800 */
   --radius: 0.625rem;
-  --sidebar: oklch(0.16 0.01 260);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.22 0.01 260);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.28 0.01 260);
+  --sidebar: #f5efe4; /* plaster-100 */
+  --sidebar-foreground: #1a1612;
+  --sidebar-accent: #ece3d2; /* plaster-200 */
+  --sidebar-accent-foreground: #2b2620;
+  --sidebar-border: #d9ccb3; /* plaster-300 */
+  --shadow-sm-value: 0 1px 2px rgba(43, 38, 32, 0.06);
+  --shadow-md-value:
+    0 8px 24px rgba(43, 38, 32, 0.08), 0 2px 4px rgba(43, 38, 32, 0.04);
+  --shadow-lg-value:
+    0 12px 32px rgba(43, 38, 32, 0.14), 0 2px 4px rgba(43, 38, 32, 0.06);
+  --shadow-xl-value:
+    0 12px 32px rgba(43, 38, 32, 0.18), 0 2px 4px rgba(43, 38, 32, 0.08);
+  --shadow-2xl-value:
+    0 20px 48px rgba(43, 38, 32, 0.22), 0 4px 8px rgba(43, 38, 32, 0.1);
 }
 
-html[data-mode="light"] {
-  --background: oklch(0.99 0.002 260);
-  --foreground: oklch(0.21 0.01 260);
-  --card: oklch(1 0 0);
-  --card-2: oklch(0.985 0.002 260);
-  --card-foreground: oklch(0.21 0.01 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.01 260);
-  --secondary: oklch(0.967 0.003 260);
-  --secondary-foreground: oklch(0.25 0.01 260);
-  --muted: oklch(0.967 0.003 260);
-  --muted-foreground: oklch(0.52 0.015 260);
-  --accent: oklch(0.96 0.004 260);
-  --accent-foreground: oklch(0.25 0.01 260);
+html[data-mode="dark"] {
+  /* Same plaster family, inverted — not the old cool near-black. The
+     site itself has no dark mode; these are our own tints of its
+     scale, one step apart from `--plaster-800`/`-700`/`-600`/`-400`
+     rather than literal site tokens. */
+  --background: #1a1612; /* plaster-900 */
+  --foreground: #f5efe4; /* plaster-100 — never pure white on dark */
+  --card: #2b2620; /* plaster-800 */
+  --card-2: #332d24;
+  --card-foreground: #f5efe4;
+  --popover: #2b2620;
+  --popover-foreground: #f5efe4;
+  --secondary: #342e26;
+  --secondary-foreground: #f5efe4;
+  --muted: #342e26;
+  --muted-foreground: #b5a78a; /* plaster-400 */
+  --accent: #342e26;
+  --accent-foreground: #f5efe4;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0.004 260);
-  --input: oklch(0.922 0.004 260);
-  --chart-2: oklch(0.6 0.1 260);
-  --chart-3: oklch(0.7 0.06 260);
-  --chart-4: oklch(0.8 0.04 260);
-  --chart-5: oklch(0.87 0.03 260);
+  --border: #463f33; /* plaster-700 */
+  --input: #635947; /* plaster-600 */
+  --chart-2: #96a88a; /* sage, lifted for dark */
+  --chart-3: #7c8fa8; /* slate blue, lifted */
+  --chart-4: #c97a6c; /* terracotta, lifted */
+  --chart-5: #c9a94e; /* gold-400 */
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0.002 260);
-  --sidebar-foreground: oklch(0.21 0.01 260);
-  --sidebar-accent: oklch(0.96 0.004 260);
-  --sidebar-accent-foreground: oklch(0.25 0.01 260);
-  --sidebar-border: oklch(0.922 0.004 260);
+  --sidebar: #1a1612;
+  --sidebar-foreground: #f5efe4;
+  --sidebar-accent: #342e26;
+  --sidebar-accent-foreground: #f5efe4;
+  --sidebar-border: #463f33;
+  --shadow-sm-value: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-md-value: 0 8px 24px rgba(0, 0, 0, 0.32), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-lg-value:
+    0 12px 32px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.24);
+  --shadow-xl-value:
+    0 12px 32px rgba(0, 0, 0, 0.48), 0 2px 4px rgba(0, 0, 0, 0.28);
+  --shadow-2xl-value:
+    0 20px 48px rgba(0, 0, 0, 0.56), 0 4px 8px rgba(0, 0, 0, 0.32);
 }
 
 /* ---- ACCENT: primary color ---- */
 
 :root,
-html[data-theme="violet"] {
-  --primary: oklch(0.526 0.247 293);
-  --primary-foreground: oklch(0.985 0 0);
-  --primary-hover: oklch(0.6 0.22 293);
-  --primary-soft: oklch(0.526 0.247 293 / 0.12);
-  --primary-soft-2: oklch(0.526 0.247 293 / 0.2);
-  --ring: oklch(0.526 0.247 293);
-  --chart-1: oklch(0.526 0.247 293);
-  --sidebar-primary: oklch(0.526 0.247 293);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-ring: oklch(0.526 0.247 293);
-}
-
-html[data-theme="emerald"] {
-  --primary: oklch(0.62 0.16 162);
-  --primary-foreground: oklch(0.16 0.02 162);
-  --primary-hover: oklch(0.68 0.15 162);
-  --primary-soft: oklch(0.62 0.16 162 / 0.12);
-  --primary-soft-2: oklch(0.62 0.16 162 / 0.22);
-  --ring: oklch(0.62 0.16 162);
-  --chart-1: oklch(0.62 0.16 162);
-  --chart-2: oklch(0.7 0.14 195);
-  --sidebar-primary: oklch(0.62 0.16 162);
-  --sidebar-primary-foreground: oklch(0.16 0.02 162);
-  --sidebar-ring: oklch(0.62 0.16 162);
-}
-
-html[data-theme="cobalt"] {
-  --primary: oklch(0.585 0.2 254);
-  --primary-foreground: oklch(0.985 0 0);
-  --primary-hover: oklch(0.66 0.18 254);
-  --primary-soft: oklch(0.585 0.2 254 / 0.12);
-  --primary-soft-2: oklch(0.585 0.2 254 / 0.22);
-  --ring: oklch(0.585 0.2 254);
-  --chart-1: oklch(0.585 0.2 254);
-  --chart-2: oklch(0.7 0.15 220);
-  --sidebar-primary: oklch(0.585 0.2 254);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-ring: oklch(0.585 0.2 254);
-}
-
-html[data-theme="amber"] {
-  --primary: oklch(0.745 0.16 65);
-  --primary-foreground: oklch(0.18 0.03 65);
-  --primary-hover: oklch(0.8 0.15 65);
-  --primary-soft: oklch(0.745 0.16 65 / 0.12);
-  --primary-soft-2: oklch(0.745 0.16 65 / 0.22);
-  --ring: oklch(0.745 0.16 65);
-  --chart-1: oklch(0.745 0.16 65);
-  --chart-2: oklch(0.7 0.15 35);
-  --sidebar-primary: oklch(0.745 0.16 65);
-  --sidebar-primary-foreground: oklch(0.18 0.03 65);
-  --sidebar-ring: oklch(0.745 0.16 65);
-}
-
-html[data-theme="rose"] {
-  --primary: oklch(0.645 0.22 16);
-  --primary-foreground: oklch(0.985 0 0);
-  --primary-hover: oklch(0.71 0.2 16);
-  --primary-soft: oklch(0.645 0.22 16 / 0.12);
-  --primary-soft-2: oklch(0.645 0.22 16 / 0.22);
-  --ring: oklch(0.645 0.22 16);
-  --chart-1: oklch(0.645 0.22 16);
-  --chart-2: oklch(0.7 0.18 340);
-  --sidebar-primary: oklch(0.645 0.22 16);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-ring: oklch(0.645 0.22 16);
+html[data-theme="gold"] {
+  /* gold-700/-600 from the site's own --gold-* scale. -700 (not the
+     site's literal --accent = gold-600) carries text/button-fill
+     duty here so `text-primary` and white-on-primary both clear
+     4.5:1 against the plaster surfaces above; -600 is reserved for
+     the lighter hover state and non-text accents (ring, chart-1),
+     which only need 3:1. See PRODUCT.md → Brand Commitments. */
+  --primary: #8a6a2c; /* gold-700 */
+  --primary-foreground: #fbf8f3; /* plaster-50 */
+  --primary-hover: #a5813f; /* gold-600 — lighter on hover, like every other accent here */
+  --primary-soft: rgb(138 106 44 / 0.12);
+  --primary-soft-2: rgb(138 106 44 / 0.2);
+  --ring: #a5813f; /* gold-600 */
+  --chart-1: #a5813f; /* gold-600 */
+  --sidebar-primary: #8a6a2c;
+  --sidebar-primary-foreground: #fbf8f3;
+  --sidebar-ring: #a5813f;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    transition-timing-function: var(--ease-out);
   }
   body {
     @apply bg-background text-foreground;

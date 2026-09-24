@@ -618,14 +618,14 @@ export function ImportModal({
                   </div>
                 )}
                 {result.skipped > 0 && (
-                  <div className="flex items-center gap-1.5 text-sm text-amber-400">
+                  <div className="flex items-center gap-1.5 text-sm text-amber-700 dark:text-amber-400">
                     <AlertTriangle className="size-4 shrink-0" />
                     {t('resultSkipped', { count: result.skipped })}
                   </div>
                 )}
                 {result.invalidPhone > 0 && (
                   <div className="space-y-0.5">
-                    <div className="flex items-center gap-1.5 text-sm text-amber-400">
+                    <div className="flex items-center gap-1.5 text-sm text-amber-700 dark:text-amber-400">
                       <AlertTriangle className="size-4 shrink-0" />
                       {t('resultInvalidPhone', { count: result.invalidPhone })}
                     </div>
@@ -635,7 +635,7 @@ export function ImportModal({
                   </div>
                 )}
                 {result.failed > 0 && (
-                  <div className="flex items-center gap-1.5 text-sm text-red-400">
+                  <div className="flex items-center gap-1.5 text-sm text-red-700 dark:text-red-400">
                     <XCircle className="size-4 shrink-0" />
                     {t('resultFailed', { count: result.failed })}
                   </div>

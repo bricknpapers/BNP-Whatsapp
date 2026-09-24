@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
-import { Inter } from "next/font/google";
+import { Cormorant_Garamond, Cormorant_SC, Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/hooks/use-theme";
@@ -20,12 +20,29 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+// Display serif (headings, empty states) + small-caps companion —
+// bricknpapers.com's own `--font-display` / `--font-caps` pairing.
+// EB Garamond and the generic serif fallback in the site's own stack
+// aren't Google Fonts entries next/font can load, so those steps of
+// the fallback chain apply only via the CSS var's own font-family list.
+const cormorantGaramond = Cormorant_Garamond({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const cormorantSC = Cormorant_SC({
+  variable: "--font-caps",
+  subsets: ["latin"],
+  weight: ["500", "600"],
+});
+
 export const metadata: Metadata = {
   title: {
-    default: "wacrm",
-    template: "%s — wacrm",
+    default: "Brick N Papers",
+    template: "%s — Brick N Papers",
   },
-  description: "Self-hostable CRM template for WhatsApp.",
+  description: "Brick N Papers' WhatsApp CRM — shared inbox, contacts, pipelines, and broadcasts.",
   robots: {
     index: false,
     follow: false,
@@ -41,8 +58,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#020617",
-  colorScheme: "dark light",
+  themeColor: "#fbf8f3",
+  colorScheme: "light dark",
 };
 
 // Inline boot script — runs before React hydrates so the user's
@@ -90,7 +107,7 @@ export default async function RootLayout({
       lang={locale}
       data-theme={DEFAULT_THEME}
       data-mode={DEFAULT_MODE}
-      className={`${inter.variable} h-full antialiased`}
+      className={`${inter.variable} ${cormorantGaramond.variable} ${cormorantSC.variable} h-full antialiased`}
       // The `theme-boot` script below rewrites `data-theme` and
       // `data-mode` on <html> from localStorage before React hydrates,
       // so for any non-default choice the client DOM intentionally

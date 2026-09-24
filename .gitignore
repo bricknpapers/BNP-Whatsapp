@@ -42,3 +42,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# impeccable — design.json + surfaces/ are durable docs and stay
+# tracked; review captures and the hook cache are working artifacts
+.impeccable/config.local.json
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/build/
+.impeccable/hook.cache.json

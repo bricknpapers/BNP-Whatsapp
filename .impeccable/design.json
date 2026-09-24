@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-24T00:00:00.000Z",
+  "title": "Design System: Brick N Papers WhatsApp CRM",
+  "extensions": {
+    "colorMeta": {
+      "gold-700": {
+        "role": "primary",
+        "displayName": "Gold Leaf",
+        "canonical": "#8A6A2C",
+        "tonalRamp": ["#4A3814", "#6B511F", "#8A6A2C", "#A5813F", "#B5912F", "#C9A94E", "#DCC371", "#E8D697", "#F4E9C8", "#FBF6E8"]
+      },
+      "gold-600": {
+        "role": "primary-decorative",
+        "displayName": "Gold Leaf, Hover",
+        "canonical": "#A5813F",
+        "tonalRamp": ["#4A3814", "#6B511F", "#8A6A2C", "#A5813F", "#B5912F", "#C9A94E", "#DCC371", "#E8D697"]
+      },
+      "plaster-50": {
+        "role": "neutral",
+        "displayName": "Plaster Ground",
+        "canonical": "#FBF8F3",
+        "tonalRamp": ["#1A1612", "#2B2620", "#463F33", "#635947", "#8A7C63", "#B5A78A", "#D9CCB3", "#ECE3D2", "#F5EFE4", "#FBF8F3"]
+      },
+      "plaster-900": {
+        "role": "neutral",
+        "displayName": "Plaster Ink",
+        "canonical": "#1A1612",
+        "tonalRamp": ["#1A1612", "#2B2620", "#463F33", "#635947", "#8A7C63", "#B5A78A", "#D9CCB3", "#ECE3D2", "#F5EFE4", "#FBF8F3"]
+      },
+      "card-raised": {
+        "role": "neutral",
+        "displayName": "Raised White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#F5EFE4", "#FFFFFF"]
+      },
+      "destructive": {
+        "role": "semantic",
+        "displayName": "Destructive Red",
+        "canonical": "oklch(0.577 0.245 27.325)",
+        "tonalRamp": ["oklch(0.35 0.2 27)", "oklch(0.45 0.22 27)", "oklch(0.577 0.245 27.325)", "oklch(0.68 0.2 27)", "oklch(0.8 0.12 27)"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Card/module titles, empty states, auth headlines. Feeds shadcn font-heading mapping." },
+      "caps": { "displayName": "Small Caps Label", "purpose": "Sidebar wordmark and small-caps identity labels only." },
+      "body": { "displayName": "Body/UI", "purpose": "All forms, tables, lists, buttons, nav labels." }
+    },
+    "shadows": [
+      { "name": "shadow-sm", "value": "0 1px 2px rgba(43, 38, 32, 0.06)", "purpose": "Subtle separation, thin intentional dividers." },
+      { "name": "shadow-md", "value": "0 8px 24px rgba(43, 38, 32, 0.08), 0 2px 4px rgba(43, 38, 32, 0.04)", "purpose": "Default card/popover lift." },
+      { "name": "shadow-lg", "value": "0 12px 32px rgba(43, 38, 32, 0.14), 0 2px 4px rgba(43, 38, 32, 0.06)", "purpose": "Dialogs/sheets." },
+      { "name": "shadow-xl", "value": "0 12px 32px rgba(43, 38, 32, 0.18), 0 2px 4px rgba(43, 38, 32, 0.08)", "purpose": "High-elevation overlays." },
+      { "name": "shadow-2xl", "value": "0 20px 48px rgba(43, 38, 32, 0.22), 0 4px 8px rgba(43, 38, 32, 0.1)", "purpose": "Highest elevation, stacked modals." },
+      { "name": "shadow-md-dark", "value": "0 8px 24px rgba(0, 0, 0, 0.32), 0 2px 4px rgba(0, 0, 0, 0.2)", "purpose": "Dark-mode equivalent of shadow-md; black tint replaces brown." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Default transition easing across the app, lifted from bricknpapers.com's own token." }
+    ],
+    "breakpoints": [
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default submit/primary-action button, e.g. auth page sign-in.",
+      "html": "<button class=\"ds-btn-primary\">Sign in</button>",
+      "css": ".ds-btn-primary { background: #8A6A2C; color: #FBF8F3; padding: 0 0.625rem; height: 2.25rem; border-radius: 0.5rem; border: none; font-size: 0.875rem; font-weight: 500; font-family: Inter, sans-serif; transition: background 0.2s cubic-bezier(0.22,1,0.36,1), transform 0.2s; } .ds-btn-primary:hover { background: rgba(138,106,44,0.9); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(165,129,63,0.5); border-color: #A5813F; } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action button with plain border.",
+      "html": "<button class=\"ds-btn-outline\">Cancel</button>",
+      "css": ".ds-btn-outline { background: #FBF8F3; color: #1A1612; padding: 0 0.625rem; height: 2rem; border-radius: 0.5rem; border: 1px solid #ECE3D2; font-size: 0.875rem; font-weight: 500; font-family: Inter, sans-serif; transition: background 0.2s; } .ds-btn-outline:hover { background: #ECE3D2; } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(165,129,63,0.5); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Base form field used throughout auth and app forms.",
+      "html": "<input class=\"ds-input\" type=\"email\" placeholder=\"you@example.com\" />",
+      "css": ".ds-input { height: 2rem; width: 100%; border-radius: 0.5rem; border: 1px solid #D9CCB3; background: transparent; padding: 0.25rem 0.625rem; font-size: 0.875rem; font-family: Inter, sans-serif; color: #1A1612; transition: border-color 0.2s, box-shadow 0.2s; } .ds-input::placeholder { color: #635947; } .ds-input:focus-visible { outline: none; border-color: #8A6A2C; box-shadow: 0 0 0 3px rgba(165,129,63,0.2); } .ds-input[aria-invalid='true'] { border-color: oklch(0.577 0.245 27.325); box-shadow: 0 0 0 3px rgba(220,38,38,0.2); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Base raised container used for auth forms, dashboard panels, list items.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Welcome back</div><div class=\"ds-card-desc\">Sign in to your account</div></div>",
+      "css": ".ds-card { background: #FFFFFF; border-radius: 0.875rem; box-shadow: 0 8px 24px rgba(43,38,32,0.08), 0 2px 4px rgba(43,38,32,0.04); box-shadow: 0 8px 24px rgba(43,38,32,0.08), 0 2px 4px rgba(43,38,32,0.04), 0 0 0 1px rgba(26,22,18,0.1); padding: 1rem; } .ds-card-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.25rem; font-weight: 500; color: #1A1612; } .ds-card-desc { font-family: Inter, sans-serif; font-size: 0.875rem; color: #635947; margin-top: 0.25rem; }"
+    },
+    {
+      "name": "Sidebar Nav Item (active)",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Soft-tint active pill for the primary sidebar navigation.",
+      "html": "<a class=\"ds-nav-item ds-nav-item-active\" href=\"#\">Inbox</a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 0.75rem; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; font-weight: 500; font-family: Inter, sans-serif; color: #635947; transition: background 0.2s, color 0.2s; } .ds-nav-item:hover { background: #ECE3D2; color: #1A1612; } .ds-nav-item-active { background: rgba(138,106,44,0.1); color: #8A6A2C; }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge-default",
+      "description": "Pill-shaped status/count badge.",
+      "html": "<span class=\"ds-badge\">3</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; justify-content: center; height: 1.25rem; padding: 0 0.5rem; border-radius: 9999px; background: #8A6A2C; color: #FBF8F3; font-size: 0.75rem; font-weight: 500; font-family: Inter, sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Plaster Workroom",
+    "overview": "Brick N Papers' internal CRM is the daylight back room of a craft studio, not a downloaded SaaS shell: warm plaster walls, one disciplined gold accent, and a serif that belongs to the brand rather than a system default. The system is pulled directly from bricknpapers.com's shipped production tokens — the same --gold-*/--plaster-* scales, the same Cormorant/Inter pairing, the same brown-tinted shadow recipe — re-proven for a dense, daily-use Operate-mode tool rather than a marketing page. Nothing here is a stylistic impression of the brand; every token traces to a literal value the site itself ships.\n\nIt refuses the category-default \"AI dashboard\" look this app used to be: near-black surfaces, a neon/violet accent, glowing edges, a swappable multi-theme picker. Warmth is disciplined, not decorative — gold appears on primary actions, active nav state, focus rings, and key numerics, never drenched across a screen. Dark mode exists as a secondary, opt-in re-tint of the same plaster/gold family (the marketing site itself never shipped one), so switching modes never breaks brand identity.",
+    "keyCharacteristics": [
+      "Warm plaster neutrals carry every surface; gold is the single, restrained accent, not a wash.",
+      "Display serif (Cormorant Garamond) for titles and empty states; Cormorant SC small caps for section labels; Inter for all body, form, and table text.",
+      "Shadows are brown/ink-tinted, never neutral gray.",
+      "Exactly one accent theme (gold) — no multi-theme picker exists in the shipped build.",
+      "The logo is a supplied brand asset, cropped by fixed math, never redrawn or reinterpreted."
+    ],
+    "rules": [
+      { "name": "The Deepened-Accent Rule", "body": "Gold-700, not the site's literal gold-600 --accent, carries text and button-fill duty. Gold-600 is demoted to hover/ring/chart-line duty. This is a deliberate accessibility trade over the literal site token, made once, and should not be \"corrected\" back to gold-600 for text.", "section": "colors" },
+      { "name": "The Restraint Rule", "body": "Gold covers primary actions, the active nav pill, focus rings, and key numerics — not backgrounds, not body copy, not decorative fills. If a screen reads gold-heavy, it has drifted from the source.", "section": "colors" },
+      { "name": "The One-Serif Rule", "body": "Display serif is reserved for titles and identity moments only. Every interactive/dense surface — forms, tables, lists, buttons — stays in Inter. The pairing exists so brand doesn't slow down daily task work.", "section": "typography" },
+      { "name": "The Ink-Tint Rule", "body": "Shadows are never neutral gray. Light mode tints with plaster-800 brown; dark mode tints with black. A gray shadow anywhere in this system is a bug, not a variant.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use gold-700 (#8A6A2C) for any text or button-fill accent use, and reserve gold-600 (#A5813F) for hover/ring/decorative duty — this order is a confirmed accessibility fix, not the literal site value.",
+      "Do tint every shadow with plaster-800 brown in light mode (rgba(43,38,32,…)) and black in dark mode — never neutral gray.",
+      "Do tile the brand mark on bg-card, never on bg-primary/gold.",
+      "Do use the app's own shadcn radius scale (--radius: 0.625rem-derived) for all app-shell surfaces, not the marketing site's corner values.",
+      "Do let Input rely on its own border-input bg-transparent styling; don't re-override it per screen."
+    ],
+    "donts": [
+      "Don't reintroduce a multi-theme accent picker. Exactly one accent (gold) exists in the shipped build; document theming as mode-only (light/dark) if at all.",
+      "Don't override Input's base border/background per page (the removed border-border bg-muted auth pattern was a legibility regression, not an alternate valid style).",
+      "Don't fill nav active-state rows solid gold; the confirmed pattern is the bg-primary/10 text-primary soft-tint pill.",
+      "Don't redraw, recolor, or reinterpret the logo file — treat public/brand/logo.png and its fixed crop math as the only source of truth for the mark."
+    ]
+  }
+}
