@@ -9,6 +9,22 @@ Versions follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Pre-1.0, `MINOR` bumps cover new modules; `PATCH` bumps cover bug fixes
 and polish.
 
+## [Unreleased]
+
+### Added
+
+- **BrickNPapers quotations on WhatsApp.** Send a quotation from the inbox
+  (PDF + Accept / Reject buttons, or an approved template outside the
+  24-hour window), let the customer accept or reject in chat, and on Accept
+  send a Razorpay payment request. Payment status shows on the bubble and
+  BNP's `payment.paid` callback confirms the order to the customer. See
+  [docs/bnp-quotations.md](./docs/bnp-quotations.md).
+
+> **Migration required:** apply `supabase/migrations/043_bnp_quotations.sql`.
+> New optional env vars: `BNP_API_URL`, `BNP_API_KEY`,
+> `QUOTATION_ADVANCE_PERCENT`, `BNP_QUOTATION_TEMPLATE_NAME`,
+> `BNP_QUOTATION_TEMPLATE_LANGUAGE`.
+
 ## [0.8.1] — 2026-07-10
 
 Fixes inbound chats fragmenting into multiple threads for the same
