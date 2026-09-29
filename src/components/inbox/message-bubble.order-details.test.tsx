@@ -22,11 +22,9 @@ function render(overrides: Partial<Message>) {
     ...overrides,
   };
   return renderToStaticMarkup(
-    React.createElement(NextIntlClientProvider, {
-      locale: 'en',
-      messages: en,
-      children: React.createElement(MessageBubble, { message }),
-    })
+    <NextIntlClientProvider locale="en" messages={en}>
+      <MessageBubble message={message} />
+    </NextIntlClientProvider>
   );
 }
 
