@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS bnp_quotation_events (
   -- What this row is a claim for: 'sent' (quotation delivered),
   -- 'button' (a tap, keyed on its wamid), 'payment_paid' (BNP callback,
   -- keyed on the payment reference).
-  kind TEXT NOT NULL CHECK (kind IN ('sent', 'button', 'payment_paid')),
+  kind TEXT NOT NULL CHECK (kind IN ('sent', 'button', 'payment_request', 'payment_paid')),
   -- Globally unique per account, e.g. `button:<wamid>`,
   -- `paid:<reference>`, `sent:<number>`.
   dedupe_key TEXT NOT NULL,

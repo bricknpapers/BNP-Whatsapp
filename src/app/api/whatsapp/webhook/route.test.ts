@@ -6,6 +6,7 @@ const h = vi.hoisted(() => ({
   dispatchInboundToFlows: vi.fn(),
   dispatchInboundToAiReply: vi.fn(),
   dispatchWebhookEvent: vi.fn(),
+  handleQuotationButtonReply: vi.fn(),
   state: {
     // Result the message upsert's .select() resolves to. A genuine insert
     // returns the row; a replayed delivery conflicts and returns [].
@@ -41,6 +42,8 @@ const h = vi.hoisted(() => ({
     broadcastRecipient: null as { id: string; status: string } | null,
     /** Patches applied to that broadcast_recipients row. */
     recipientUpdates: [] as Record<string, unknown>[],
+    /** `.or()` guards a payment-status update was issued with. */
+    paymentGuards: [] as string[],
   },
 }))
 
@@ -197,7 +200,16 @@ vi.mock('@supabase/supabase-js', () => ({
             // Status webhook mirror (#535): update(...).eq('message_id', ...)
             update: (patch: Record<string, unknown>) => {
               h.state.messageUpdates.push(patch)
-              return { eq: () => Promise.resolve({ error: null }) }
+              return {
+                eq: () =>
+                  Object.assign(Promise.resolve({ error: null }), {
+                    // payment-status updates add a forward-only guard
+                    or: (guard: string) => {
+                      h.state.paymentGuards.push(guard)
+                      return Promise.resolve({ error: null })
+                    },
+                  }),
+              }
             },
             // Idempotent insert: upsert(...).select('id')
             upsert: (row: Record<string, unknown>, options: unknown) => {
@@ -277,6 +289,9 @@ vi.mock('@/lib/ai/auto-reply', () => ({
 }))
 vi.mock('@/lib/webhooks/deliver', () => ({
   dispatchWebhookEvent: h.dispatchWebhookEvent,
+}))
+vi.mock('@/lib/bnp/inbound', () => ({
+  handleQuotationButtonReply: h.handleQuotationButtonReply,
 }))
 
 import { POST } from './route'
@@ -379,6 +394,8 @@ beforeEach(() => {
   h.state.messageUpdates = []
   h.state.broadcastRecipient = null
   h.state.recipientUpdates = []
+  h.state.paymentGuards = []
+  h.handleQuotationButtonReply.mockResolvedValue(false)
   mockFindExistingContact.mockResolvedValue({
     id: 'contact-1',
     name: 'Ada',
@@ -1010,5 +1027,101 @@ describe('status webhook: failed statuses keep Meta\'s reason (#535)', () => {
     expect(h.state.recipientUpdates).toHaveLength(1)
     expect(h.state.recipientUpdates[0]).not.toHaveProperty('error_message')
     expect(h.state.recipientUpdates[0]).not.toHaveProperty('error_code')
+  })
+})
+
+describe('inbound webhook: quotation buttons (BNP)', () => {
+  const TAP = {
+    id: 'wamid.TAP1',
+    from: '15551230000',
+    timestamp: '1700000000',
+    type: 'interactive',
+    interactive: {
+      type: 'button_reply',
+      button_reply: { id: 'quote:accept:Q-2026-0001', title: 'Accept' },
+    },
+  }
+
+  it('hands the tap to the quotation handler with tenancy + wamid', async () => {
+    await runWebhook(TAP)
+    expect(h.handleQuotationButtonReply).toHaveBeenCalledTimes(1)
+    expect(h.handleQuotationButtonReply.mock.calls[0][0]).toMatchObject({
+      accountId: 'acc-1',
+      conversationId: 'conv-1',
+      contactId: 'contact-1',
+      ownerUserId: 'user-1',
+      wamid: 'wamid.TAP1',
+      replyId: 'quote:accept:Q-2026-0001',
+    })
+  })
+
+  it('still runs flows and the interactive_reply automation for the same tap', async () => {
+    await runWebhook(TAP)
+    expect(h.dispatchInboundToFlows).toHaveBeenCalledTimes(1)
+    expect(h.runAutomationsForTrigger).toHaveBeenCalledWith(
+      expect.objectContaining({ triggerType: 'interactive_reply' }),
+    )
+  })
+
+  it('a replayed delivery never reaches the handler', async () => {
+    h.state.messageUpsertResult = []
+    await runWebhook(TAP)
+    expect(h.handleQuotationButtonReply).not.toHaveBeenCalled()
+  })
+
+  it('plain text messages reach the handler with a null replyId', async () => {
+    await runWebhook()
+    expect(h.handleQuotationButtonReply.mock.calls[0][0].replyId).toBeNull()
+  })
+})
+
+describe('status webhook: payment updates (BNP)', () => {
+  const payment = (status: string, extra: Record<string, unknown> = {}) => ({
+    id: 'wamid.ORDER1',
+    status,
+    type: 'payment',
+    timestamp: '1700000100',
+    recipient_id: '15551230000',
+    payment: { reference_id: 'ref-1' },
+    ...extra,
+  })
+
+  it('records captured on payment_status only — never on messages.status', async () => {
+    await runStatusWebhook(payment('captured'))
+    expect(h.state.messageUpdates).toEqual([{ payment_status: 'captured' }])
+    expect(h.state.paymentGuards).toEqual([]) // captured is terminal, no guard
+    expect(h.state.recipientUpdates).toEqual([])
+  })
+
+  it('guards pending so a replay cannot undo captured', async () => {
+    await runStatusWebhook(payment('pending'))
+    expect(h.state.messageUpdates).toEqual([{ payment_status: 'pending' }])
+    expect(h.state.paymentGuards).toEqual([
+      'payment_status.is.null,payment_status.eq.pending',
+    ])
+  })
+
+  it('guards failed so it cannot override captured', async () => {
+    await runStatusWebhook(payment('failed'))
+    expect(h.state.messageUpdates).toEqual([{ payment_status: 'failed' }])
+    expect(h.state.paymentGuards[0]).toContain('payment_status.eq.pending')
+    expect(h.state.paymentGuards[0]).not.toContain('captured')
+  })
+
+  it('maps a transaction status when the top-level one is unfamiliar', async () => {
+    await runStatusWebhook(
+      payment('completed', { payment: { transaction: { status: 'success' } } }),
+    )
+    expect(h.state.messageUpdates).toEqual([{ payment_status: 'captured' }])
+  })
+
+  it('ignores an unrecognised payment status', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      await runStatusWebhook(payment('weird'))
+    } finally {
+      warn.mockRestore()
+    }
+    expect(h.state.messageUpdates).toEqual([])
   })
 })

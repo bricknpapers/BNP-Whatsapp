@@ -98,6 +98,13 @@ export interface SendMessageParams {
   orderDetailsMessage?: unknown;
   /** Persisted on the message row so the inbox / webhooks can link it back to a quotation. */
   quotationNumber?: string | null;
+  /**
+   * System-generated reply (e.g. the automatic answer to a quotation
+   * button tap) rather than a human agent stepping in: stored as
+   * `sender_type='bot'` and does NOT pause the contact's active Flow
+   * run, which the "agent replied" path does.
+   */
+  automated?: boolean;
 }
 
 export interface SendMessageResult {
@@ -227,6 +234,7 @@ export async function sendMessageToConversation(
     replyToMessageId,
     orderDetailsMessage,
     quotationNumber,
+    automated,
   } = params;
 
   if (!conversationId) {
@@ -522,7 +530,7 @@ export async function sendMessageToConversation(
     .from('messages')
     .insert({
       conversation_id: conversationId,
-      sender_type: 'agent',
+      sender_type: automated ? 'bot' : 'agent',
       content_type: messageType,
       content_text: persistedText,
       media_url: mediaUrl || null,
@@ -569,25 +577,28 @@ export async function sendMessageToConversation(
 
   // Pause any active Flow run for this contact — the agent stepping in
   // is the strongest "yield, human is here" signal. Best-effort.
-  try {
-    const { error: pauseErr } = await supabaseAdmin()
-      .from('flow_runs')
-      .update({
-        status: 'paused_by_agent',
-        ended_at: new Date().toISOString(),
-        end_reason: 'agent_replied',
-      })
-      .eq('account_id', accountId)
-      .eq('contact_id', contact.id)
-      .eq('status', 'active');
-    if (pauseErr) {
-      console.error('[flows] pause-on-agent-send failed:', pauseErr.message);
+  // Skipped for automated replies: no human has stepped in.
+  if (!automated) {
+    try {
+      const { error: pauseErr } = await supabaseAdmin()
+        .from('flow_runs')
+        .update({
+          status: 'paused_by_agent',
+          ended_at: new Date().toISOString(),
+          end_reason: 'agent_replied',
+        })
+        .eq('account_id', accountId)
+        .eq('contact_id', contact.id)
+        .eq('status', 'active');
+      if (pauseErr) {
+        console.error('[flows] pause-on-agent-send failed:', pauseErr.message);
+      }
+    } catch (err) {
+      console.error(
+        '[flows] pause-on-agent-send threw:',
+        err instanceof Error ? err.message : err
+      );
     }
-  } catch (err) {
-    console.error(
-      '[flows] pause-on-agent-send threw:',
-      err instanceof Error ? err.message : err
-    );
   }
 
   return { messageId: messageRecord.id, whatsappMessageId: waMessageId };
