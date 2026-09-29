@@ -22,6 +22,7 @@ import {
   Plus,
   MessageSquareDashed,
   Zap,
+  Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GatedButton } from "@/components/ui/gated-button";
@@ -55,6 +56,7 @@ import {
 import { validateInteractivePayload } from "@/lib/whatsapp/interactive";
 import type { InteractiveMessagePayload, QuickReply } from "@/types";
 import { QuickReplyPicker } from "./quick-reply-picker";
+import { QuotationDialog } from "./quotation-dialog";
 
 /** Media content types an agent can send from the composer. */
 export type ComposerMediaKind = "image" | "video" | "document" | "audio";
@@ -154,6 +156,7 @@ export function MessageComposer({
     useState<InteractiveMessagePayload>(blankButtonsPayload);
   const [savingQuickReply, setSavingQuickReply] = useState(false);
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
+  const [quotationOpen, setQuotationOpen] = useState(false);
 
   // Media attachment state. `draft` holds an uploaded-but-not-yet-sent
   // attachment; `busy` covers the upload/transcode window.
@@ -709,6 +712,21 @@ export function MessageComposer({
             <LayoutTemplate className="h-4 w-4" />
           </GatedButton>
 
+          {/* BNP quotation. Deliberately NOT inside the + menu: that menu
+              is disabled once the 24h window closes, but a quotation can
+              still go out then as an approved template. */}
+          <GatedButton
+            variant="ghost"
+            size="sm"
+            canAct={!readOnly}
+            gateReason="send messages"
+            title={readOnly ? undefined : t("quotation")}
+            className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+            onClick={() => setQuotationOpen(true)}
+          >
+            <Receipt className="h-4 w-4" />
+          </GatedButton>
+
           <GatedButton
             variant="ghost"
             size="sm"
@@ -804,6 +822,12 @@ export function MessageComposer({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <QuotationDialog
+        open={quotationOpen}
+        onOpenChange={setQuotationOpen}
+        conversationId={conversationId}
+      />
 
       {/* Quick-reply picker. */}
       <QuickReplyPicker

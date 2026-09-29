@@ -226,7 +226,10 @@ export type ContentType =
   | 'location'
   | 'template'
   /** Customer tapped a reply button or list row on a message we sent. */
-  | 'interactive';
+  | 'interactive'
+  /** Outbound WhatsApp payment request (Razorpay `order_details`). Migration 043. */
+  | 'order_details';
+export type PaymentStatus = 'pending' | 'captured' | 'failed';
 export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 
 export interface Message {
@@ -262,6 +265,16 @@ export interface Message {
    * 'interactive'` and `sender_type` is agent/bot. Migration 035.
    */
   interactive_payload?: InteractiveMessagePayload;
+  /** BNP quotation this message belongs to (e.g. `Q-2026-0001`). Migration 043. */
+  quotation_number?: string | null;
+  /**
+   * For `order_details` messages: BNP payment reference, the amount in
+   * paise, and WhatsApp's latest payment status. Informational — BNP's
+   * callback is the source of truth for the order. Migration 043.
+   */
+  payment_reference?: string | null;
+  payment_amount_paise?: number | null;
+  payment_status?: PaymentStatus | null;
   /**
    * True when the AI auto-reply bot generated + sent this message (as
    * opposed to a human agent or a deterministic Flow/automation send,

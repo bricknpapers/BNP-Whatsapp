@@ -224,7 +224,8 @@
       "send": "보내기",
       "quickReplyNamePrompt": "이 빠른 답장의 이름을 지정하세요:",
       "quickReplySaved": "빠른 답장으로 저장되었습니다.",
-      "quickReplySaveError": "빠른 답장을 저장하지 못했습니다."
+      "quickReplySaveError": "빠른 답장을 저장하지 못했습니다.",
+      "quotation": "견적서 보내기"
     },
     "bubble": {
       "photo": "사진",
@@ -244,7 +245,12 @@
       "downloadFailed": "첨부파일을 다운로드할 수 없습니다",
       "viewImage": "이미지 보기",
       "expandVideo": "동영상 확대",
-      "imageAlt": "공유된 이미지"
+      "imageAlt": "공유된 이미지",
+      "paymentRequest": "결제 요청",
+      "paymentPending": "결제 대기 중",
+      "paymentPaid": "결제 완료",
+      "paymentFailed": "결제 실패",
+      "quotationRef": "견적서 {number}"
     },
     "mediaViewer": {
       "counter": "{total}개 중 {index}번째",
@@ -313,6 +319,28 @@
       "resumed": "AI가 재개되었습니다.",
       "updateError": "AI 어시스턴트를 업데이트하지 못했습니다.",
       "networkError": "서버에 연결할 수 없습니다."
+    },
+    "quotation": {
+      "title": "견적서 보내기",
+      "description": "BrickNPapers의 견적서를 보냅니다. 고객이 WhatsApp에서 바로 수락하거나 거절할 수 있습니다.",
+      "numberLabel": "견적서 번호",
+      "numberPlaceholder": "Q-2026-0001",
+      "lookup": "조회",
+      "customer": "고객",
+      "total": "합계",
+      "validUntil": "유효 기간",
+      "status": "상태",
+      "deliverySession": "PDF를 보낸 뒤 수락·거절 버튼이 있는 메시지를 보냅니다.",
+      "deliveryTemplate": "이 대화는 24시간 창을 벗어났으므로, 견적서는 수락·거절 버튼이 있는 승인된 템플릿으로 발송됩니다.",
+      "deliveryTemplateMissing": "이 대화는 24시간 창을 벗어났고 견적서 템플릿이 설정되어 있지 않습니다. docs/bnp-quotations.md를 참고하세요.",
+      "noPdf": "이 견적서에는 아직 PDF가 없습니다.",
+      "send": "견적서 보내기",
+      "cancel": "취소",
+      "sent": "견적서 {number}을(를) 보냈습니다.",
+      "sentWarning": "견적서를 보냈지만 BrickNPapers를 업데이트하지 못했습니다: {warning}",
+      "sendFailed": "견적서를 보내지 못했습니다.",
+      "lookupFailed": "해당 견적서를 조회하지 못했습니다.",
+      "notConfigured": "BrickNPapers가 연결되어 있지 않습니다. BNP_API_URL과 BNP_API_KEY를 설정하세요."
     }
   },
   "Contacts": {
