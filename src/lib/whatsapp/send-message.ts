@@ -27,6 +27,7 @@ import {
   sendMediaMessage,
   sendInteractiveButtons,
   sendInteractiveList,
+  sendOrderDetailsMessage,
   type MediaKind,
 } from '@/lib/whatsapp/meta-api';
 import {
@@ -41,6 +42,7 @@ import {
   isRecipientNotAllowedError,
 } from '@/lib/whatsapp/phone-utils';
 import { resolveContactSendTarget } from '@/lib/whatsapp/wa-identity';
+import { parseOrderDetailsMessage } from '@/lib/bnp/order-details';
 import type { MessageTemplate } from '@/types';
 import {
   resolveTemplateRow,
@@ -53,6 +55,7 @@ export const VALID_MESSAGE_TYPES = [
   'text',
   'template',
   'interactive',
+  'order_details',
   ...MEDIA_KINDS,
 ] as const;
 
@@ -87,6 +90,14 @@ export interface SendMessageParams {
   /** Structured payload for `messageType === 'interactive'`. */
   interactivePayload?: InteractiveMessagePayload | null;
   replyToMessageId?: string | null;
+  /**
+   * `messageType === 'order_details'`: BNP's complete payment-request
+   * message (`{ interactive: { type: 'order_details', … } }`). Only its
+   * `interactive` body is forwarded to Meta.
+   */
+  orderDetailsMessage?: unknown;
+  /** Persisted on the message row so the inbox / webhooks can link it back to a quotation. */
+  quotationNumber?: string | null;
 }
 
 export interface SendMessageResult {
@@ -117,9 +128,16 @@ export function validateSendMessageParams(params: {
   mediaUrl?: string | null;
   templateName?: string | null;
   interactivePayload?: InteractiveMessagePayload | null;
+  orderDetailsMessage?: unknown;
 }): void {
-  const { messageType, contentText, mediaUrl, templateName, interactivePayload } =
-    params;
+  const {
+    messageType,
+    contentText,
+    mediaUrl,
+    templateName,
+    interactivePayload,
+    orderDetailsMessage,
+  } = params;
 
   if (!messageType) {
     throw new SendMessageError('bad_request', 'message_type is required', 400);
@@ -157,6 +175,13 @@ export function validateSendMessageParams(params: {
     const result = validateInteractivePayload(interactivePayload);
     if (!result.ok) {
       throw new SendMessageError('bad_request', result.error, 400);
+    }
+  }
+
+  if (messageType === 'order_details') {
+    const parsed = parseOrderDetailsMessage(orderDetailsMessage);
+    if (!parsed.ok) {
+      throw new SendMessageError('bad_request', parsed.error, 400);
     }
   }
 
@@ -200,6 +225,8 @@ export async function sendMessageToConversation(
     templateMessageParams,
     interactivePayload,
     replyToMessageId,
+    orderDetailsMessage,
+    quotationNumber,
   } = params;
 
   if (!conversationId) {
@@ -216,7 +243,14 @@ export async function sendMessageToConversation(
     mediaUrl,
     templateName,
     interactivePayload,
+    orderDetailsMessage,
   });
+
+  const orderDetails =
+    messageType === 'order_details'
+      ? parseOrderDetailsMessage(orderDetailsMessage)
+      : null;
+  const orderInfo = orderDetails?.ok ? orderDetails.info : null;
 
   const isMediaKind = (MEDIA_KINDS as readonly string[]).includes(messageType);
 
@@ -367,6 +401,15 @@ export async function sendMessageToConversation(
       });
       return result.messageId;
     }
+    if (messageType === 'order_details') {
+      const result = await sendOrderDetailsMessage({
+        phoneNumberId: config.phone_number_id,
+        accessToken,
+        to: phone,
+        interactive: orderInfo!.interactive,
+      });
+      return result.messageId;
+    }
     if (messageType === 'interactive') {
       const p = interactivePayload!;
       if (p.kind === 'buttons') {
@@ -465,7 +508,9 @@ export async function sendMessageToConversation(
   const persistedText =
     messageType === 'interactive'
       ? interactivePayload!.body
-      : messageType === 'template'
+      : messageType === 'order_details'
+        ? orderInfo!.bodyText
+        : messageType === 'template'
         ? templateContentText(
             templateRow,
             templateBodyParams(templateParams, templateMessageParams),
@@ -487,6 +532,14 @@ export async function sendMessageToConversation(
       message_id: waMessageId,
       status: 'sent',
       reply_to_message_id: replyToMessageId || null,
+      quotation_number: quotationNumber || null,
+      ...(orderInfo
+        ? {
+            payment_reference: orderInfo.reference,
+            payment_amount_paise: orderInfo.amountPaise,
+            payment_status: 'pending',
+          }
+        : {}),
     })
     .select()
     .single();
