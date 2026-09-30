@@ -11,6 +11,7 @@ import {
   LayoutTemplate,
   CornerDownLeft,
   Sparkles,
+  Receipt,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ReplyQuote } from "./reply-quote";
@@ -24,6 +25,7 @@ import {
 } from "./message-media";
 import { InteractivePreview } from "@/components/interactive/interactive-preview";
 import { useTranslations } from "next-intl";
+import { formatRupees } from "@/lib/bnp/format";
 
 interface MessageBubbleProps {
   message: Message;
@@ -187,6 +189,62 @@ function MessageContent({
           )}
         </div>
       );
+
+    case "order_details": {
+      // BNP payment request (Razorpay). Shows the amount and WhatsApp's
+      // latest payment status; the order itself is confirmed by BNP's
+      // callback, not by this badge.
+      const status = message.payment_status ?? "pending";
+      const statusLabel =
+        status === "captured"
+          ? t("paymentPaid")
+          : status === "failed"
+            ? t("paymentFailed")
+            : t("paymentPending");
+      return (
+        <div>
+          <span
+            className={cn(
+              "mb-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",
+              isAgent
+                ? "bg-primary-foreground/20 text-primary-foreground"
+                : "bg-primary/20 text-primary",
+            )}
+          >
+            <Receipt className="h-3 w-3" />
+            {t("paymentRequest")}
+          </span>
+          {message.content_text && (
+            <p className="mt-1 whitespace-pre-wrap break-words text-sm">
+              {message.content_text}
+            </p>
+          )}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+            {message.payment_amount_paise != null && (
+              <span className="font-semibold tabular-nums">
+                ₹{formatRupees(message.payment_amount_paise)}
+              </span>
+            )}
+            <span
+              data-payment-status={status}
+              className={cn(
+                "rounded-full px-1.5 py-px text-[10px] font-medium",
+                isAgent
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-background/60 text-foreground",
+              )}
+            >
+              {statusLabel}
+            </span>
+            {message.quotation_number && (
+              <span className="opacity-80">
+                {t("quotationRef", { number: message.quotation_number })}
+              </span>
+            )}
+          </div>
+        </div>
+      );
+    }
 
     case "location":
       return (

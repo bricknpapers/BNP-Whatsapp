@@ -224,7 +224,8 @@
       "send": "Enviar",
       "quickReplyNamePrompt": "Dê um nome a esta resposta rápida:",
       "quickReplySaved": "Salva como resposta rápida.",
-      "quickReplySaveError": "Não foi possível salvar a resposta rápida."
+      "quickReplySaveError": "Não foi possível salvar a resposta rápida.",
+      "quotation": "Enviar orçamento"
     },
     "bubble": {
       "photo": "Foto",
@@ -244,7 +245,12 @@
       "downloadFailed": "Não foi possível baixar o anexo",
       "viewImage": "Ver imagem",
       "expandVideo": "Expandir vídeo",
-      "imageAlt": "Imagem compartilhada"
+      "imageAlt": "Imagem compartilhada",
+      "paymentRequest": "Solicitação de pagamento",
+      "paymentPending": "Pagamento pendente",
+      "paymentPaid": "Pago",
+      "paymentFailed": "Pagamento falhou",
+      "quotationRef": "Orçamento {number}"
     },
     "mediaViewer": {
       "counter": "{index} de {total}",
@@ -313,6 +319,28 @@
       "resumed": "IA retomada.",
       "updateError": "Não foi possível atualizar o assistente de IA.",
       "networkError": "Não foi possível conectar ao servidor."
+    },
+    "quotation": {
+      "title": "Enviar orçamento",
+      "description": "Envie um orçamento do BrickNPapers. O cliente pode aceitar ou recusar diretamente no WhatsApp.",
+      "numberLabel": "Número do orçamento",
+      "numberPlaceholder": "Q-2026-0001",
+      "lookup": "Buscar",
+      "customer": "Cliente",
+      "total": "Total",
+      "validUntil": "Válido até",
+      "status": "Status",
+      "deliverySession": "Envia o PDF e, em seguida, uma mensagem com os botões Aceitar e Recusar.",
+      "deliveryTemplate": "Esta conversa está fora da janela de 24 horas, então o orçamento será enviado como um modelo aprovado com os botões Aceitar e Recusar.",
+      "deliveryTemplateMissing": "Esta conversa está fora da janela de 24 horas e nenhum modelo de orçamento está configurado. Veja docs/bnp-quotations.md.",
+      "noPdf": "Este orçamento ainda não tem PDF.",
+      "send": "Enviar orçamento",
+      "cancel": "Cancelar",
+      "sent": "Orçamento {number} enviado.",
+      "sentWarning": "Orçamento enviado, mas o BrickNPapers não foi atualizado: {warning}",
+      "sendFailed": "Não foi possível enviar o orçamento.",
+      "lookupFailed": "Não foi possível buscar esse orçamento.",
+      "notConfigured": "O BrickNPapers não está conectado. Defina BNP_API_URL e BNP_API_KEY."
     }
   },
   "Contacts": {

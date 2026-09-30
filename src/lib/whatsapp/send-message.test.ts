@@ -163,6 +163,7 @@ describe('SendMessageError', () => {
 // ============================================================
 
 const sendTemplateMessage = vi.fn(async () => ({ messageId: 'wamid.1' }));
+const sendOrderDetailsMessage = vi.fn(async () => ({ messageId: 'wamid.order' }));
 
 // Stub only the senders — the module also exports INTERACTIVE_LIMITS,
 // which `interactive.ts` needs for the payload validation covered above.
@@ -174,6 +175,8 @@ vi.mock('@/lib/whatsapp/meta-api', async (importOriginal) => ({
   sendMediaMessage: vi.fn(async () => ({ messageId: 'wamid.media' })),
   sendInteractiveButtons: vi.fn(async () => ({ messageId: 'wamid.btn' })),
   sendInteractiveList: vi.fn(async () => ({ messageId: 'wamid.list' })),
+  sendOrderDetailsMessage: (...args: unknown[]) =>
+    (sendOrderDetailsMessage as unknown as (...a: unknown[]) => unknown)(...args),
 }));
 
 vi.mock('@/lib/whatsapp/encryption', () => ({
@@ -443,5 +446,81 @@ describe('sendMessageToConversation — BSUID recipients (#519)', () => {
         { conversationId: 'cv-1', messageType: 'text', contentText: 'hi' }
       )
     ).rejects.toThrow(/no phone number or WhatsApp user ID/);
+  });
+});
+
+// ============================================================
+// order_details (BNP payment request)
+// ============================================================
+
+const ORDER_MESSAGE = {
+  messaging_product: 'whatsapp',
+  to: '919999999999', // BNP-supplied recipient must never be used
+  type: 'interactive',
+  interactive: {
+    type: 'order_details',
+    body: { text: 'Advance for Q-2026-0001' },
+    action: {
+      name: 'review_and_pay',
+      parameters: {
+        reference_id: 'ref-1',
+        total_amount: { value: 1250000, offset: 100 },
+      },
+    },
+  },
+};
+
+describe('sendMessageToConversation — order_details', () => {
+  it('rejects a malformed payload before touching the db', async () => {
+    await expectSendError(
+      {
+        conversationId: 'cv-1',
+        messageType: 'order_details',
+        orderDetailsMessage: {},
+      },
+      400,
+      /no interactive body/
+    );
+    await expectSendError(
+      {
+        conversationId: 'cv-1',
+        messageType: 'order_details',
+        orderDetailsMessage: { interactive: { type: 'button' } },
+      },
+      400,
+      /not an order_details/
+    );
+  });
+
+  it('forwards only the interactive body and persists payment fields', async () => {
+    const captured: CapturedWrites = {};
+    const result = await sendMessageToConversation(
+      sendPathDb([], captured),
+      'acct-1',
+      {
+        conversationId: 'cv-1',
+        messageType: 'order_details',
+        orderDetailsMessage: ORDER_MESSAGE,
+        quotationNumber: 'Q-2026-0001',
+      }
+    );
+    expect(result.whatsappMessageId).toBe('wamid.order');
+    const args = (sendOrderDetailsMessage.mock.calls as unknown[][])[0][0] as {
+      to: string;
+      interactive: unknown;
+    };
+    expect(args.to).toBe('15551234567');
+    expect(args.interactive).toBe(ORDER_MESSAGE.interactive);
+    expect(captured.message).toMatchObject({
+      content_type: 'order_details',
+      content_text: 'Advance for Q-2026-0001',
+      quotation_number: 'Q-2026-0001',
+      payment_reference: 'ref-1',
+      payment_amount_paise: 1250000,
+      payment_status: 'pending',
+    });
+    expect(captured.conversation?.last_message_text).toBe(
+      'Advance for Q-2026-0001'
+    );
   });
 });

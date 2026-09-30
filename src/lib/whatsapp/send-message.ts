@@ -27,6 +27,7 @@ import {
   sendMediaMessage,
   sendInteractiveButtons,
   sendInteractiveList,
+  sendOrderDetailsMessage,
   type MediaKind,
 } from '@/lib/whatsapp/meta-api';
 import {
@@ -41,6 +42,7 @@ import {
   isRecipientNotAllowedError,
 } from '@/lib/whatsapp/phone-utils';
 import { resolveContactSendTarget } from '@/lib/whatsapp/wa-identity';
+import { parseOrderDetailsMessage } from '@/lib/bnp/order-details';
 import type { MessageTemplate } from '@/types';
 import {
   resolveTemplateRow,
@@ -53,6 +55,7 @@ export const VALID_MESSAGE_TYPES = [
   'text',
   'template',
   'interactive',
+  'order_details',
   ...MEDIA_KINDS,
 ] as const;
 
@@ -87,6 +90,21 @@ export interface SendMessageParams {
   /** Structured payload for `messageType === 'interactive'`. */
   interactivePayload?: InteractiveMessagePayload | null;
   replyToMessageId?: string | null;
+  /**
+   * `messageType === 'order_details'`: BNP's complete payment-request
+   * message (`{ interactive: { type: 'order_details', … } }`). Only its
+   * `interactive` body is forwarded to Meta.
+   */
+  orderDetailsMessage?: unknown;
+  /** Persisted on the message row so the inbox / webhooks can link it back to a quotation. */
+  quotationNumber?: string | null;
+  /**
+   * System-generated reply (e.g. the automatic answer to a quotation
+   * button tap) rather than a human agent stepping in: stored as
+   * `sender_type='bot'` and does NOT pause the contact's active Flow
+   * run, which the "agent replied" path does.
+   */
+  automated?: boolean;
 }
 
 export interface SendMessageResult {
@@ -117,9 +135,16 @@ export function validateSendMessageParams(params: {
   mediaUrl?: string | null;
   templateName?: string | null;
   interactivePayload?: InteractiveMessagePayload | null;
+  orderDetailsMessage?: unknown;
 }): void {
-  const { messageType, contentText, mediaUrl, templateName, interactivePayload } =
-    params;
+  const {
+    messageType,
+    contentText,
+    mediaUrl,
+    templateName,
+    interactivePayload,
+    orderDetailsMessage,
+  } = params;
 
   if (!messageType) {
     throw new SendMessageError('bad_request', 'message_type is required', 400);
@@ -157,6 +182,13 @@ export function validateSendMessageParams(params: {
     const result = validateInteractivePayload(interactivePayload);
     if (!result.ok) {
       throw new SendMessageError('bad_request', result.error, 400);
+    }
+  }
+
+  if (messageType === 'order_details') {
+    const parsed = parseOrderDetailsMessage(orderDetailsMessage);
+    if (!parsed.ok) {
+      throw new SendMessageError('bad_request', parsed.error, 400);
     }
   }
 
@@ -200,6 +232,9 @@ export async function sendMessageToConversation(
     templateMessageParams,
     interactivePayload,
     replyToMessageId,
+    orderDetailsMessage,
+    quotationNumber,
+    automated,
   } = params;
 
   if (!conversationId) {
@@ -216,7 +251,14 @@ export async function sendMessageToConversation(
     mediaUrl,
     templateName,
     interactivePayload,
+    orderDetailsMessage,
   });
+
+  const orderDetails =
+    messageType === 'order_details'
+      ? parseOrderDetailsMessage(orderDetailsMessage)
+      : null;
+  const orderInfo = orderDetails?.ok ? orderDetails.info : null;
 
   const isMediaKind = (MEDIA_KINDS as readonly string[]).includes(messageType);
 
@@ -367,6 +409,15 @@ export async function sendMessageToConversation(
       });
       return result.messageId;
     }
+    if (messageType === 'order_details') {
+      const result = await sendOrderDetailsMessage({
+        phoneNumberId: config.phone_number_id,
+        accessToken,
+        to: phone,
+        interactive: orderInfo!.interactive,
+      });
+      return result.messageId;
+    }
     if (messageType === 'interactive') {
       const p = interactivePayload!;
       if (p.kind === 'buttons') {
@@ -465,7 +516,9 @@ export async function sendMessageToConversation(
   const persistedText =
     messageType === 'interactive'
       ? interactivePayload!.body
-      : messageType === 'template'
+      : messageType === 'order_details'
+        ? orderInfo!.bodyText
+        : messageType === 'template'
         ? templateContentText(
             templateRow,
             templateBodyParams(templateParams, templateMessageParams),
@@ -477,7 +530,7 @@ export async function sendMessageToConversation(
     .from('messages')
     .insert({
       conversation_id: conversationId,
-      sender_type: 'agent',
+      sender_type: automated ? 'bot' : 'agent',
       content_type: messageType,
       content_text: persistedText,
       media_url: mediaUrl || null,
@@ -487,6 +540,14 @@ export async function sendMessageToConversation(
       message_id: waMessageId,
       status: 'sent',
       reply_to_message_id: replyToMessageId || null,
+      quotation_number: quotationNumber || null,
+      ...(orderInfo
+        ? {
+            payment_reference: orderInfo.reference,
+            payment_amount_paise: orderInfo.amountPaise,
+            payment_status: 'pending',
+          }
+        : {}),
     })
     .select()
     .single();
@@ -516,25 +577,28 @@ export async function sendMessageToConversation(
 
   // Pause any active Flow run for this contact — the agent stepping in
   // is the strongest "yield, human is here" signal. Best-effort.
-  try {
-    const { error: pauseErr } = await supabaseAdmin()
-      .from('flow_runs')
-      .update({
-        status: 'paused_by_agent',
-        ended_at: new Date().toISOString(),
-        end_reason: 'agent_replied',
-      })
-      .eq('account_id', accountId)
-      .eq('contact_id', contact.id)
-      .eq('status', 'active');
-    if (pauseErr) {
-      console.error('[flows] pause-on-agent-send failed:', pauseErr.message);
+  // Skipped for automated replies: no human has stepped in.
+  if (!automated) {
+    try {
+      const { error: pauseErr } = await supabaseAdmin()
+        .from('flow_runs')
+        .update({
+          status: 'paused_by_agent',
+          ended_at: new Date().toISOString(),
+          end_reason: 'agent_replied',
+        })
+        .eq('account_id', accountId)
+        .eq('contact_id', contact.id)
+        .eq('status', 'active');
+      if (pauseErr) {
+        console.error('[flows] pause-on-agent-send failed:', pauseErr.message);
+      }
+    } catch (err) {
+      console.error(
+        '[flows] pause-on-agent-send threw:',
+        err instanceof Error ? err.message : err
+      );
     }
-  } catch (err) {
-    console.error(
-      '[flows] pause-on-agent-send threw:',
-      err instanceof Error ? err.message : err
-    );
   }
 
   return { messageId: messageRecord.id, whatsappMessageId: waMessageId };

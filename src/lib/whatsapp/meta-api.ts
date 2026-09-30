@@ -383,6 +383,49 @@ export async function sendTextMessage(
   return { messageId: data.messages[0].id }
 }
 
+export interface SendOrderDetailsArgs {
+  phoneNumberId: string
+  accessToken: string
+  to: string
+  /**
+   * The `interactive` object of an `order_details` message (Razorpay
+   * deep-integration payment request) exactly as the payment provider
+   * built it. We wrap it — messaging_product / recipient / type are
+   * ours, never taken from the caller.
+   */
+  interactive: Record<string, unknown>
+}
+
+/**
+ * Send a WhatsApp `order_details` interactive message (a payment
+ * request). Same envelope as every other send; only the `interactive`
+ * body is caller-supplied. Works inside the 24-hour window only.
+ */
+export async function sendOrderDetailsMessage(
+  args: SendOrderDetailsArgs
+): Promise<MetaSendResult> {
+  const { phoneNumberId, accessToken, to, interactive } = args
+  const url = `${META_API_BASE}/${phoneNumberId}/messages`
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      ...recipientFields(to),
+      type: 'interactive',
+      interactive,
+    }),
+  })
+  if (!response.ok) {
+    await throwMetaError(response, `Meta API error: ${response.status}`)
+  }
+  const data = await response.json()
+  return { messageId: data.messages[0].id }
+}
+
 export type MediaKind = 'image' | 'video' | 'document' | 'audio'
 
 export interface SendMediaMessageArgs {

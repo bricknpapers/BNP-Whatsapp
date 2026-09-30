@@ -224,7 +224,8 @@
       "send": "Send",
       "quickReplyNamePrompt": "Name this quick reply:",
       "quickReplySaved": "Saved as a quick reply.",
-      "quickReplySaveError": "Couldn't save the quick reply."
+      "quickReplySaveError": "Couldn't save the quick reply.",
+      "quotation": "Send quotation"
     },
     "bubble": {
       "photo": "Photo",
@@ -244,7 +245,12 @@
       "downloadFailed": "Couldn't download the attachment",
       "viewImage": "View image",
       "expandVideo": "Expand video",
-      "imageAlt": "Shared image"
+      "imageAlt": "Shared image",
+      "paymentRequest": "Payment request",
+      "paymentPending": "Payment pending",
+      "paymentPaid": "Paid",
+      "paymentFailed": "Payment failed",
+      "quotationRef": "Quotation {number}"
     },
     "mediaViewer": {
       "counter": "{index} of {total}",
@@ -313,6 +319,28 @@
       "resumed": "AI resumed.",
       "updateError": "Couldn’t update the AI assistant.",
       "networkError": "Couldn’t reach the server."
+    },
+    "quotation": {
+      "title": "Send quotation",
+      "description": "Send a quotation from BrickNPapers. The customer can accept or reject it right in WhatsApp.",
+      "numberLabel": "Quotation number",
+      "numberPlaceholder": "Q-2026-0001",
+      "lookup": "Look up",
+      "customer": "Customer",
+      "total": "Total",
+      "validUntil": "Valid until",
+      "status": "Status",
+      "deliverySession": "Sends the PDF, then a message with Accept and Reject buttons.",
+      "deliveryTemplate": "This chat is outside the 24-hour window, so the quotation goes out as an approved template with Accept and Reject buttons.",
+      "deliveryTemplateMissing": "This chat is outside the 24-hour window and no quotation template is configured. See docs/bnp-quotations.md.",
+      "noPdf": "This quotation has no PDF yet.",
+      "send": "Send quotation",
+      "cancel": "Cancel",
+      "sent": "Quotation {number} sent.",
+      "sentWarning": "Quotation sent, but BrickNPapers wasn't updated: {warning}",
+      "sendFailed": "Couldn't send the quotation.",
+      "lookupFailed": "Couldn't look up that quotation.",
+      "notConfigured": "BrickNPapers isn't connected. Set BNP_API_URL and BNP_API_KEY."
     }
   },
   "Contacts": {

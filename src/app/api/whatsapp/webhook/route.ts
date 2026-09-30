@@ -18,6 +18,7 @@ import { runAutomationsForTrigger } from '@/lib/automations/engine'
 import { dispatchInboundToFlows } from '@/lib/flows/engine'
 import { dispatchInboundToAiReply } from '@/lib/ai/auto-reply'
 import { dispatchWebhookEvent } from '@/lib/webhooks/deliver'
+import { handleQuotationButtonReply } from '@/lib/bnp/inbound'
 import {
   handleTemplateWebhookChange,
   isTemplateWebhookField,
@@ -99,6 +100,12 @@ interface MetaStatusError {
   href?: string
 }
 
+/** The `payment` object on a `statuses[]` entry of `type: 'payment'`. */
+interface MetaPaymentStatus {
+  reference_id?: string
+  transaction?: { status?: string }
+}
+
 interface WhatsAppWebhookEntry {
   id: string
   changes: Array<{
@@ -121,6 +128,9 @@ interface WhatsAppWebhookEntry {
         status: string
         timestamp: string
         recipient_id: string
+        /** `'payment'` for a WhatsApp payment update on an order_details message. */
+        type?: string
+        payment?: MetaPaymentStatus
         /**
          * Only present when `status === 'failed'`. Meta's reason for the
          * failure — `code` is a stable numeric error code (e.g. 131049),
@@ -408,13 +418,64 @@ function isValidStatusTransition(current: string, incoming: string): boolean {
   return ii > ci
 }
 
+const PAYMENT_STATUS_FROM_TRANSACTION: Record<string, string> = {
+  success: 'captured',
+  captured: 'captured',
+  failed: 'failed',
+  pending: 'pending',
+}
+
+/**
+ * A WhatsApp `payment` status (captured / failed / pending) on one of our
+ * order_details messages. Recorded on the message for the inbox bubble
+ * ONLY — it never touches messages.status (its CHECK has no 'captured'),
+ * broadcasts, or the order: BNP's payment.paid callback is the source of
+ * truth. Forward-only, so a replayed/out-of-order 'pending' can't undo
+ * 'captured', and the UPDATE is idempotent under Meta retries.
+ */
+async function handlePaymentStatus(status: {
+  id: string
+  status: string
+  payment?: MetaPaymentStatus
+}) {
+  const next =
+    (['captured', 'failed', 'pending'] as const).find(
+      (s) => s === status.status
+    ) ?? PAYMENT_STATUS_FROM_TRANSACTION[status.payment?.transaction?.status ?? '']
+  if (!next) {
+    console.warn('[webhook] unrecognised payment status ignored:', status.status)
+    return
+  }
+
+  let query = supabaseAdmin()
+    .from('messages')
+    .update({ payment_status: next })
+    .eq('message_id', status.id)
+  if (next === 'pending') {
+    query = query.or('payment_status.is.null,payment_status.eq.pending')
+  } else if (next === 'failed') {
+    query = query.or(
+      'payment_status.is.null,payment_status.eq.pending,payment_status.eq.failed'
+    )
+  }
+  const { error } = await query
+  if (error) console.error('Error updating message payment status:', error)
+}
+
 async function handleStatusUpdate(status: {
   id: string
   status: string
   timestamp: string
   recipient_id: string
+  type?: string
+  payment?: MetaPaymentStatus
   errors?: MetaStatusError[]
 }) {
+  if (status.type === 'payment') {
+    await handlePaymentStatus(status)
+    return
+  }
+
   // Meta's reason for a failed send (#535). Only read on `failed`; a
   // later non-failed status for the same wamid leaves the error
   // columns alone rather than clearing them, so the reason survives.
@@ -984,6 +1045,20 @@ async function processMessage(
     whatsapp_message_id: message.id,
     content_type: contentType,
     text: contentText,
+  })
+
+  // BNP quotation Accept / Reject taps (`quote:<action>:<number>`). Runs
+  // last and only for quote ids — every other button/list reply is left
+  // to the flow / automation dispatch above. Never throws; idempotent on
+  // the wamid (a replayed delivery already returned at the insert above).
+  await handleQuotationButtonReply({
+    db: supabaseAdmin(),
+    accountId,
+    conversationId: conversation.id,
+    contactId: contactRecord.id,
+    ownerUserId: configOwnerUserId,
+    wamid: message.id,
+    replyId: interactiveReplyId,
   })
 }
 
